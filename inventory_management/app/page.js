@@ -37,8 +37,9 @@ const style = {
 
 export default function Home() {
   const [inventory, setInventory] = useState([]);
-  const [open, setOpen] = useState([]);
+  const [open, setOpen] = useState(false);
   const [itemName, setItemName] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const updateInventory = async () => {
     const snapshot = query(collection(firestore, "inventory"));
@@ -58,8 +59,8 @@ export default function Home() {
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      const { quantity } = docSnap;
-      if (quantity == 1) {
+      const { quantity } = docSnap.data();
+      if (quantity === 1) {
         await deleteDoc(docRef);
       } else {
         await setDoc(docRef, { quantity: quantity - 1 });
@@ -89,6 +90,11 @@ export default function Home() {
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
+
+  const filteredInventory = inventory.filter((item) =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <Box
       width="100vw"
@@ -134,7 +140,20 @@ export default function Home() {
       <Button variant="contained" onClick={handleOpen}>
         Add New Item
       </Button>
-      <Box border={"1px solid #333"}>
+      <Box
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        gap={2}
+        border={"1px solid #333"}
+      >
+        <TextField
+          id="search-bar"
+          variant="outlined"
+          fullWidth
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
         <Box
           width="800px"
           height="100px"
@@ -148,7 +167,7 @@ export default function Home() {
           </Typography>
         </Box>
         <Stack width="800px" height="300px" spacing={2} overflow={"auto"}>
-          {inventory.map(({ name, quantity }) => (
+          {filteredInventory.map(({ name, quantity }) => (
             <Box
               key={name}
               width="100%"
